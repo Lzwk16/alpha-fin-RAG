@@ -1,9 +1,9 @@
-# Alpha Fincial Q&A chatbot
+# Alpha Financial Q&A chatbot
 A research assistant that answers questions about the investment articles coming
 from Picture Perfect Portfolios corpus, citing a verbatim source for its claims.
 
 ## Overview
-Alpha Fincial Q&A chatbot answers open-ended questions about 447 investing articles, and refuses when they don't cover a question or when it asks for personal advice.
+Alpha Financial Q&A chatbot answers open-ended questions about 447 investing articles, and refuses when they don't cover a question or when it asks for personal advice.
 It addresses a common problem with generated answers: figures that can't be traced back to a source, or that belong to a different fund.
 Deterministic guards check each answer's quotes and figures against the retrieved excerpts, and disagreements between articles are reported in the answer.
 It is written in Python, using sentence-transformers, BM25, Chroma, an
