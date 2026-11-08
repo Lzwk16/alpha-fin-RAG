@@ -1,0 +1,23 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+ALPHA_AUDIT_PLAN.md
+.DS_Store
+
+# Virtual environments
+.venv
+
+# Secrets and local stores
+.env
+.chroma/
+logs/
+eval/*.csv
+eval/*.jsonl
+
+# Data: only the v2 article dataset is committed (CC BY-NC 4.0); everything else is local
+data/*
+!data/picture-perfect-portfolios_v2.jsonl

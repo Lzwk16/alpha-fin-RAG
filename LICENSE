@@ -1,0 +1,11 @@
+Dataset
+
+The articles in data/picture-perfect-portfolios.jsonl and data/picture-perfect-portfolios_v2.jsonl, and text derived
+from them, come from Picture Perfect Portfolios and are licensed under the Creative Commons Attribution-NonCommercial
+4.0 International licence (CC BY-NC 4.0): https://creativecommons.org/licenses/by-nc/4.0/
+
+Use must be non-commercial and must credit the source. Alpha Audit adds an attribution line to every answer.
+
+Code
+
+No separate licence has been chosen for the code in this repository yet.

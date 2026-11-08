@@ -1,0 +1,51 @@
+# Alpha Audit settings (no secrets here: LLM_BASE_URL / LLM_API_KEY / LLM_MODEL live in .env).
+# Values marked "expt" were chosen in notebooks/rag_part1_expt2-3; see ALPHA_AUDIT_PLAN.md.
+
+paths: # relative to the repo root
+  raw_data: data/picture-perfect-portfolios_v2.jsonl # v2 = v1 text + dataset metadata (license CC-BY-NC-4.0)
+  processed: data/processed
+  chroma: .chroma
+  logs: logs
+
+chunking: # Strategy B (structured), clean corpus
+  target_max_tokens: 350 # capped at the embedding model's limit minus header_reserve (mpnet: 384 -> 318)
+  header_reserve: 64 # room for the "title › section" header that is embedded with each chunk
+  overlap: 50
+  min_section_tokens: 50
+
+retrieval:
+  embedding_model: sentence-transformers/all-mpnet-base-v2 # expt 1-2
+  collection: ppp_all-mpnet-base-v2_B_clean
+  reranker: BAAI/bge-reranker-base # expt 3: beat MiniLM-L6 on claims
+  k_fetch:
+    50 # bi-encoder candidates passed to the reranker (the collection's hnsw ef_search is 500:
+    # at 100 the approximate top 50 lost evidence for some questions, expt 4)
+  bm25_k: 50 # expt 4: + BM25 top 50 (deduplicated) -> hit@5 0.84 -> 0.93 on questions, ~1.3 s/question
+  k: 10 # evidence chunks handed to the LLM (rag_part2_expt1: 5 -> 10 fixed a synthesis question and
+        # raised gold hit rate 0.93 -> 0.97 on non-synthesis dev questions, for 62% more input tokens)
+  per_doc_cap: null # expt 3-4: a cap of 2 (or MMR) costs recall on claims and on questions
+  not_in_corpus_threshold:
+    0.20 # reranker top-1 below this -> answer "not in corpus" without an LLM call (expt 4:
+    # refuses 0/139 answerable test questions; "figure not stated" is the prompt's job)
+
+# Three LLMs from different model families (same-model bias). Model names, URLs and keys live in .env:
+#   LLM_MODEL (generator, e.g. gpt-6-luna)   EVAL_LLM_MODEL (eval sets, e.g. azure.claude-haiku-5-5)
+#   JUDGE_LLM_MODEL (judges of the generator's answers, e.g. gemini-3.8-flash)
+# EVAL_/JUDGE_LLM_BASE_URL and _API_KEY default to LLM_BASE_URL / LLM_API_KEY. All share one proxy key, so their rpm
+# should add up to the key's limit (20 per window) if they ever run at the same time.
+
+llm: # the RAG generator; LLM_* environment variables / .env override these
+  answer_reasoning_effort: medium # reasoning models only (they reject temperature); null to omit
+  rpm: 18 # client-side request limit (proxy key allows 20 per window)
+  max_attempts: 6 # retries on rate limits, plus one re-ask on an unparsable answer
+
+eval_llm: # eval/build_goldset.py, eval/build_qa_set.py; EVAL_LLM_* override these
+  generation_reasoning_effort: null # writing claims / questions. Claude Haiku via the proxy ignores it; the
+  check_reasoning_effort: null # vertex_ai.* route breaks structured output when it is sent, so keep null
+  rpm: 18
+  max_attempts: 6
+
+judge_llm: # LLM judges of the generator's answers (eval/judge.py); JUDGE_LLM_* override these.
+  reasoning_effort: null # JUDGE_LLM_MODEL (e.g. gemini-3.8-flash) must not share the generator's model family
+  rpm: 18 # runs after the generator, not alongside it, so both can use most of the key's limit
+  max_attempts: 6
