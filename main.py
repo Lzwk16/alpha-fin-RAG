@@ -1,4 +1,5 @@
-"""Alpha Audit command line: `uv run main.py ingest`, `uv run main.py ask "<question>"`, `uv run main.py eval`.
+"""Alpha Audit command line: `uv run main.py ingest`, `uv run main.py ask "<question>"`, `uv run main.py eval`,
+`uv run main.py ui` (the Streamlit page in app.py).
 
 Heavy imports (models, Chroma) stay inside the commands, so `--help` is instant. `eval/` is repo tooling next to this
 file, so it imports directly.
@@ -59,7 +60,8 @@ def ingest(rebuild: Annotated[bool, typer.Option(help="Delete and rebuild the in
     console.print(f"{col.name}: {'built' if built else 'already up to date'}, {col.count():,} chunks")
 
 
-def _answer_dict(r) -> dict:
+def answer_dict(r) -> dict:
+    """An AnswerResult as plain data, shared by `ask` and the web UI."""
     by_id = {f"E{i}": e for i, e in enumerate(r.retrieval.evidence, 1)}
     return {
         "question": r.question,
@@ -99,7 +101,7 @@ def ask(question: str,
     """Answer a question from the articles, with citations. Calls the generator LLM unless retrieval finds nothing."""
     from alpha_audit.llm.generator import Generator
 
-    d = _answer_dict(Generator().ask(question))
+    d = answer_dict(Generator().ask(question))
     if as_json:
         print(json.dumps(d, ensure_ascii=False, indent=2))
     elif markdown:
@@ -156,6 +158,19 @@ def evaluate(split: Annotated[Literal["dev", "test"], typer.Option(help="Questio
         console.print("Logged to part2_iterations.csv")
     else:
         console.print(f"Not logged: {len(r.items) - r.answered} questions still need answers. Run again to continue.")
+
+
+@app.command()
+def ui(port: Annotated[int, typer.Option(help="Port to serve the page on.")] = 8501) -> None:
+    """Open the question page in the browser (Streamlit). Stop it with Ctrl+C."""
+    import subprocess
+    import sys
+    from pathlib import Path
+
+    script = Path(__file__).with_name("app.py")
+    raise typer.Exit(subprocess.call([sys.executable, "-m", "streamlit", "run", str(script), "--server.port", str(port),
+                                      "--server.address", "localhost",  # this machine only: questions spend LLM credits
+                                      "--browser.gatherUsageStats", "false"]))
 
 
 if __name__ == "__main__":

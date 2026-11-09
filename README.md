@@ -7,7 +7,7 @@ Alpha Financial Q&A chatbot answers open-ended questions about 447 investing art
 It addresses a common problem with generated answers: figures that can't be traced back to a source, or that belong to a different fund.
 Deterministic guards check each answer's quotes and figures against the retrieved excerpts, and disagreements between articles are reported in the answer.
 It is written in Python, using sentence-transformers, BM25, Chroma, an
-OpenAI-compatible LLM endpoint, Typer and pytest.
+OpenAI-compatible LLM endpoint, Typer, Streamlit and pytest.
 The purpose of building this Q&A chatbot is to obtain hands-on excersie and
 practical understanding of an end-to-end RAG pipeline in production, built in
 with quality evaluation gates.
@@ -38,7 +38,8 @@ Answering   question
 ```text
 alpha-fin-RAG/
 ├── config.yaml                 # Non-secret settings: paths, chunking, retrieval, LLM limits
-├── main.py                     # Command line: ingest, ask, eval
+├── main.py                     # Command line: ingest, ask, eval, ui
+├── app.py                      # Streamlit question page, started by `main.py ui`
 ├── src/alpha_audit/
 │   ├── config.py               # Loads config.yaml and .env
 │   ├── schemas.py              # Document, Chunk, Evidence, Answer
@@ -105,7 +106,13 @@ uv run main.py ask "What is DBMF's expense ratio?"
 uv run main.py ask "What is DBMF's expense ratio?" --json
 ```
 
-3. Evaluate the pipeline on the dev questions. This command scores cached results and makes no LLM calls.
+3. Or ask from a web page. This opens the page in your browser at `http://localhost:8501`; stop it with Ctrl+C.
+
+```bash
+uv run main.py ui
+```
+
+4. Evaluate the pipeline on the dev questions. This command scores cached results and makes no LLM calls.
 
 ```bash
 uv run main.py eval --offline
@@ -165,6 +172,11 @@ Answer a question from the articles. Call the generator LLM unless the gate stop
 - **Request Body / Inputs**: `QUESTION`, plus optional `--json` or `--markdown`.
 - **Response / Expected Output**: Status, answer, citations, conflicts, flags and attribution. `--json` also includes the prompt version, model and `gated`.
 
+### COMMAND `main.py ui`
+Serve the Streamlit question page on this machine only, and open it in the browser. The page runs the same pipeline as `ask`, loading the models once.
+- **Request Body / Inputs**: `--port N` (default `8501`).
+- **Response / Expected Output**: A page with a question box. Each answer shows the status, the answer, sources with quotes, any conflicts and flags, and the attribution line.
+
 ### COMMAND `main.py eval`
 Run a question set through the pipeline, score it and log the result. Reuse every cached result.
 - **Request Body / Inputs**: `--split dev|test`, `--sample quick|full`, `--final`, `--offline`, `--max-new-calls N`, `--max-judge-calls N`, `--note TEXT`. The test split requires `--final`.
@@ -172,7 +184,7 @@ Run a question set through the pipeline, score it and log the result. Reuse ever
 
 ## Contributing
 Branch from `main`, using names such as `fix/short-topic` or `feature/short-topic`.
-Run `uv run pytest` and `uv run ruff check src tests main.py` before opening a pull request.
+Run `uv run pytest` and `uv run ruff check src tests main.py app.py` before opening a pull request.
 Bump `ANSWER_VERSION` when the prompt changes, and `GUARD_VERSION` when the guards change.
 Change one thing per eval run, and keep the test split for the final evaluation.
 

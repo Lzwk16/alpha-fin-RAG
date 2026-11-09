@@ -1,5 +1,5 @@
-# Alpha Audit evaluation
-How Alpha Audit's retrieval and generator are evaluated: where the questions come from, how they're scored, and the full results.
+# Alpha Financial Q&A assistant evaluation
+How Alpha Financial Q&A assistant's retrieval and generator are evaluated: where the questions come from, how they're scored, and the full results.
 
 Setup and the headline results are in the main [README](../README.md). Run every command below from the repository root.
 
